@@ -11,7 +11,7 @@ from io import StringIO
 # Function to run the executable and generate the required outputs
 def run_executable(input_file):
     # Path to the executable (adjust as needed)
-    executable_path = "/mount/src/deploy/bin/mkmcxx.exe"  # Adjust path as required
+    executable_path = "/mount/src/deploy/bin/mkmcxx"  # Adjust path as required
 
     # Debugging info: Display file paths and directory contents
     st.write("Executable Path:", executable_path)
