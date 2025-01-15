@@ -1,0 +1,50 @@
+&compounds
+
+#gas-phase compounds
+
+#Name; isSite; concentration
+
+H2O            ; 0; 55.56
+CO             ; 0; 0.83325
+OH             ; 0; 1e-07
+H2             ; 0; 0.0
+
+
+#adsorbates
+
+#Name; isSite; activity
+
+CO*            ; 1; 0.0
+H2O*           ; 1; 0.0
+H*             ; 1; 0.0
+COCO*          ; 1; 0.0
+CHO*           ; 1; 0.0
+
+#free sites on the surface 
+
+#Name; isSite; activity
+
+*; 1; 1.0
+
+&reactions
+
+AR; {CO}            + {*}             => {CO*}                                 ;6.21e+12   ;  6.21e+12   ;  0.0        ;  25558.337043183994 
+AR; {CO*}           + {CO*}           => {COCO*}                               ;6.21e+12   ;  6.21e+12   ;  61382.131329243995 ;  32050.472533947996 
+AR; {CO*}           + {H2O}           => {CHO*}          + {OH}                ;6.21e+12   ;  6.21e+12   ;  85534.904765376 ;  6535.807570819999 
+AR; {H2O}           + {*}             => {H2O*}                                ;6.21e+12   ;  6.21e+12   ;  2180.9     ;  0.0        
+AR; {H2O*}                            => {H*}            + {OH}                ;6.21e+12   ;  6.21e+12   ;  59434.516734736004 ;  60574.76714841199 
+AR; {H2O}           + {H*}            => {H2}       + {OH}            + {*}    ;6.21e+12   ;  6.21e+12   ;  69880.69302033601 ;  10000000.0 
+
+
+&settings
+TYPE = SEQUENCERUN
+PRESSURE = 1
+POTAXIS=1
+DEBUG=0
+NETWORK_RATES=1
+NETWORK_FLUX=1
+USETIMESTAMP=0
+
+&runs
+# Temp; Potential;Time;AbsTol;RelTol
+298  ;-0.6 ;1.00e+15;1e-20;1e-10
