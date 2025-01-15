@@ -3,6 +3,5 @@ pandas
 numpy
 xlwings
 openpyxl
-os
 pythoncom
-matplotlib
+matplotlib  
