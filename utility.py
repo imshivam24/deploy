@@ -17,6 +17,7 @@ def run_executable(input_file):
     st.write("Executable Path:", executable_path)
     st.write("Current Working Directory:", os.getcwd())
     #st.write("Contents of Directory:", os.listdir(r"/mount/src/deploy/bin"))
+    os.system(f"chmod +x {executable_path}")
 
     # Check if the executable exists
     if os.path.exists(executable_path):
