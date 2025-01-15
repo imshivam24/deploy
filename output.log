@@ -1,0 +1,63 @@
+Executing: mkmcxx version mkmcxx 2.15.3
+Compiled on: Jan 24 2020 15:44:03
+Compiler: MSVS 191627024
+OpenMP parallelization enabled
+Commit id: d5f845c
+
+Authors: 
+    Ivo Filot <i.a.w.filot@tue.nl>
+    Bart Zijlstra <b.zijlstra@tue.nl>
+    Evert van Noort
+    Rudie van den Berg
+    Emiel Hensen <e.j.m.hensen@tue.nl>
+
+(C) Copyright 2012 Inorganic Materials Chemistry
+                   Eindhoven University of Technology
+
+This is a legal licensing agreement (Agreement) between You (an individual
+or single legal entity) and Inorganic Materials Chemistry (IMC)
+governing the in-house use of the MKMCXX software product (Software)
+By downloading, installing, or using Software, You agree to be bound by
+the license terms as given on http://wiki.mkmcxx.nl/index.php/License.
+
+
+Opening input file
+Searching for debug tag
+Debug level: -off- (from debug tag)
+Checking read rules
+Checking for segflow tag
+Performing SEQUENCERUN
+
+Number of runs:    1
+Number of threads: 1/16
+----------------------
+[06:48:58.000] WARNING: [T-00_R-001] Possibly run not yet converged at 2 compounds.
+[06:48:58.000] WARNING: [T-00_R-001] The sum of the site concentrations has changed by 1.943718e-01%
+<--THREAD-00_RUN-001-END	(100.0%)
+----------------------
+Finalizing SEQUENCERUN
+
+FINALIZING SEQUENCERUN -- SUMMARY
+*********************************
+WARNING - NO CONSERVATION OF SITES FOR RUN 1: T=298; t=1e+15; AbsTol=1e-20; RelTol=1e-10
+
+*********************************
+Calculating production patterns
+================================
+
+Calculating selectivity patterns
+================================
+
+Writing network files...
+Writing run/networkplots/network_01_0298K.dot
+Writing run/networkplots/flux_01_0298K.txt
+*********************************
+
+Writing graphs...
+Logfile: run/graphs/graphs_log.txt
+Writing graphs per single_x
+Writing range graphs
+*********************************
+
+Total execution time: 379.757 ms.
+
