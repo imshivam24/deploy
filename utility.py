@@ -10,25 +10,25 @@ from io import StringIO
 
 # Function to run the executable and generate the required outputs
 def run_executable(input_file):
-    # Path to the Windows executable
-    executable_path = r"/mount/src/deploy/bin/mkmcxx.exe"  # Adjust the path as needed
+    # Path to the executable (adjust as needed)
+    executable_path = "/home/aakrane/mkmcxx/bin/mkmcxx.exe"  # Adjust path as required
 
-    # Display debugging information in Streamlit
+    # Debugging info: Display file paths and directory contents
     st.write("Executable Path:", executable_path)
     st.write("Current Working Directory:", os.getcwd())
-    st.write("Contents of Directory:", os.listdir(r"/mount/src/deploy/bin"))
+    #st.write("Contents of Directory:", os.listdir(r"/mount/src/deploy/bin"))
 
-    # Check if the executable exists at the given path
+    # Check if the executable exists
     if os.path.exists(executable_path):
         st.write(f"Executable found at: {executable_path}")
         try:
-            # Use Wine to run the Windows executable on Linux
+            # Run the executable with the input file
             result = subprocess.run(
-                ['wine', executable_path, '-i', input_file],
+                [executable_path, '-i', input_file],
                 capture_output=True,
                 text=True
             )
-            
+
             # Display the output and error in Streamlit
             st.write("Solver Output (stdout):")
             st.text(result.stdout)
@@ -36,8 +36,8 @@ def run_executable(input_file):
             if result.stderr:
                 st.write("Solver Error Output (stderr):")
                 st.text(result.stderr)
-            
-            # Return success or failure
+
+            # Check for success or failure
             if result.returncode == 0:
                 return "Solver ran successfully!", True
             else:
@@ -47,6 +47,7 @@ def run_executable(input_file):
             return f"Error executing command: {str(e)}", False
     else:
         return "Executable not found at the given path.", False
+    
 def get_val (cov_path):   
     cov_file = open(cov_path)
     cov_val = []
