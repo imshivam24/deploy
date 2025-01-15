@@ -21,7 +21,7 @@ st.title("MKM Input File Generator and Solver")
 st.page_icon = ":coffee:"
 
 def main():
-    os.chdir("D:/projects/mkm_shell/alternative")  # Adjust as per your directory
+    #os.chdir("D:/projects/mkm_shell/alternative")  # Adjust as per your directory
 
     # Upload Excel file
     uploaded_file = st.file_uploader("Upload Excel File", type="xlsx")
