@@ -10,7 +10,7 @@ from io import StringIO
 
 # Function to run the executable and generate the required outputs
 def run_executable(input_file):
-    executable_path = r"/mount/src/deploy/bin/mkmcxx" #Removed exact path
+    executable_path = r"/mount/src/deploy/bin/mkmcxx.exe" #Removed exact path
     st.write(executable_path)
     st.write(os.getcwd())
     st.write(os.listdir(r"/mount/src/deploy/bin"))
