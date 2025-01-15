@@ -31,8 +31,8 @@ Performing SEQUENCERUN
 Number of runs:    1
 Number of threads: 1/16
 ----------------------
-[06:48:58.000] WARNING: [T-00_R-001] Possibly run not yet converged at 2 compounds.
-[06:48:58.000] WARNING: [T-00_R-001] The sum of the site concentrations has changed by 1.943718e-01%
+[07:33:50.000] WARNING: [T-00_R-001] Possibly run not yet converged at 2 compounds.
+[07:33:50.000] WARNING: [T-00_R-001] The sum of the site concentrations has changed by 1.943718e-01%
 <--THREAD-00_RUN-001-END	(100.0%)
 ----------------------
 Finalizing SEQUENCERUN
@@ -59,5 +59,5 @@ Writing graphs per single_x
 Writing range graphs
 *********************************
 
-Total execution time: 379.757 ms.
+Total execution time: 360.575 ms.
 
