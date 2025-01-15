@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import subprocess
 
-from dependencies import *
 from inp_file import *
 from mkm_parameters import *
 import shutil
