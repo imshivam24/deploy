@@ -4,4 +4,4 @@ numpy
 xlwings
 openpyxl
 matplotlib  
-pycairo   
+#pycairo   
