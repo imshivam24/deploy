@@ -10,7 +10,7 @@ from io import StringIO
 
 # Function to run the executable and generate the required outputs
 def run_executable(input_file):
-    executable_path = r"D:\mkmcxx\mkmcxx-2.15.3-windows-x64\mkmcxx_2.15.3\bin\mkmcxx.exe"
+    executable_path = r"bin\mkmcxx.exe"
     st.write(executable_path)
     if os.path.exists(executable_path):
         st.write(f"Executable found at: {executable_path}")
