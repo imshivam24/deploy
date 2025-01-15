@@ -9,7 +9,7 @@ import numpy as np
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(parent_dir)
-from inp_file_multiple import *
+from inp_file_multiple2 import *
 from utility import *
 
 st.set_page_config(
