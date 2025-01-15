@@ -5,3 +5,4 @@ xlwings
 openpyxl
 os
 pythoncom
+matplotlib
