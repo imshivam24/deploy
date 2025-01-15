@@ -19,19 +19,19 @@ def evaluate_excel_formula(formula, context, sheet_data):
     float: The evaluated result.
     """
     try:
-        # Replace Excel-style sheet references with actual values
         import re
 
         def replace_reference(match):
-            ref = match.group(1)  # Extract reference inside quotes
+            # Extract reference like 'SheetName'!Cell
+            ref = match.group(1)
             sheet, cell = ref.split('!')
-            sheet = sheet.strip("'")  # Remove surrounding quotes
-            row, col = cell[1:], cell[:1]  # Extract row and column
-            row = int(row) - 1  # Convert to 0-based index
-            col_index = ord(col.upper()) - ord('A')  # Convert column to index
-            return str(sheet_data[sheet].iloc[row, col_index])  # Lookup value
+            sheet = sheet.strip("'")  # Remove quotes
+            col, row = re.match(r"([A-Z]+)(\d+)", cell).groups()  # Extract column and row
+            row_idx = int(row) - 1  # Convert to 0-based index
+            col_idx = ord(col.upper()) - ord('A')  # Convert column letter to index
+            return str(sheet_data[sheet].iloc[row_idx, col_idx])  # Lookup value
 
-        # Find all references like 'SheetName'!Cell
+        # Replace Excel-style references with actual values
         pattern = r"'([^']+)'!([A-Z]+\d+)"
         formula = re.sub(pattern, replace_reference, formula)
 
@@ -44,46 +44,36 @@ def evaluate_excel_formula(formula, context, sheet_data):
         st.error(f"Error evaluating formula '{formula}': {e}")
         return np.nan
 
-
-def read_and_compute(file_name, sheet_name, column_name, dependencies):
+def read_and_compute(file_name, sheet_name, column_name, sheet_data):
     """
-    Reads formulas from an Excel sheet, computes their values, and returns a DataFrame.
+    Reads formulas from an Excel sheet, computes their values, and returns a Series.
 
     Args:
     file_name (str): Path to the Excel file.
     sheet_name (str): Name of the sheet to process.
     column_name (str): Column containing formulas.
-    dependencies (dict): Mapping of column names to their computed values.
+    sheet_data (dict): Mapping of sheet names to DataFrames.
 
     Returns:
     pd.Series: Series with computed values for the specified column.
     """
     try:
-        # Load the workbook and sheet
-        workbook = load_workbook(file_name)
-        sheet = workbook[sheet_name]
+        # Load the workbook and extract the desired sheet as a DataFrame
+        data = pd.read_excel(file_name, sheet_name=sheet_name)
 
-        # Extract column names and values
-        data = []
-        for row in sheet.iter_rows(values_only=True):
-            data.append(row)
-
-        df = pd.DataFrame(data[1:], columns=data[0])  # First row as headers
-
-        # Compute values for the formula column
-        if column_name not in df.columns:
+        # Compute values for the specified column
+        if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the sheet.")
 
         computed_values = []
-        for formula in df[column_name]:
+        for formula in data[column_name]:
             if isinstance(formula, str) and '=' in formula:  # Formula detected
-                # Compute formula using dependencies
-                computed_values.append(evaluate_excel_formula(formula.strip('='), dependencies))
-            else:  # Not a formula
+                computed_values.append(evaluate_excel_formula(formula.strip('='), {}, sheet_data))
+            else:  # Not a formula, use value as is
                 computed_values.append(formula)
 
         return pd.Series(computed_values, name=column_name)
-    
+
     except Exception as e:
         st.error(f"Error reading and computing formulas: {e}")
         return pd.Series(dtype=float)
@@ -94,23 +84,29 @@ def inp_file_gen_multiple(uploaded_file, children_folder):
     """
     if uploaded_file:
         try:
-            # Read required data
-            data2 = pd.read_excel(uploaded_file, sheet_name="Local Environment")
-            data3 = pd.read_excel(uploaded_file, sheet_name="Input-Output Species")
+            # Read all required sheets into a dictionary for formula evaluation
+            sheet_data = {
+                'Local Environment': pd.read_excel(uploaded_file, sheet_name='Local Environment'),
+                'Input-Output Species': pd.read_excel(uploaded_file, sheet_name='Input-Output Species'),
+                'Reactions': pd.read_excel(uploaded_file, sheet_name='Reactions')
+            }
 
-            # Define dependencies for formula computation
+            # Extract parameters
+            data2 = sheet_data['Local Environment']
+            data3 = sheet_data['Input-Output Species']
+
             dependencies = {
-                'pH': data2['pH'][0],
-                'V': data2['V'][0],
-                'Pressure': data2['Pressure'][0],
+                'pH': data2['pH'].iloc[0],
+                'V': data2['V'].iloc[0],
+                'Pressure': data2['Pressure'].iloc[0],
             }
 
             # Compute formula columns
-            concentrations = read_and_compute(uploaded_file, 'Input-Output Species', 'Input MKMCXX', dependencies)
-            Ea = read_and_compute(uploaded_file, 'Reactions', 'G_f', dependencies)
-            Eb = read_and_compute(uploaded_file, 'Reactions', 'G_b', dependencies)
+            concentrations = read_and_compute(uploaded_file, 'Input-Output Species', 'Input MKMCXX', sheet_data)
+            Ea = read_and_compute(uploaded_file, 'Reactions', 'G_f', sheet_data)
+            Eb = read_and_compute(uploaded_file, 'Reactions', 'G_b', sheet_data)
             gases = data3["Species"].tolist()
-            rxn = pd.read_excel(uploaded_file, sheet_name="Reactions")["Reactions"]
+            rxn = sheet_data['Reactions']["Reactions"]
 
             st.write("Parameters extracted and formulas computed successfully!")
         except Exception as e:
