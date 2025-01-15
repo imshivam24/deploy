@@ -10,36 +10,43 @@ from io import StringIO
 
 # Function to run the executable and generate the required outputs
 def run_executable(input_file):
-    executable_path = r"/mount/src/deploy/bin/mkmcxx.exe" #Removed exact path
-    st.write(executable_path)
-    st.write(os.getcwd())
-    st.write(os.listdir(r"/mount/src/deploy/bin"))
-    os.system("chmod +x /mount/src/deploy/bin/mkmcxx.exe")
+    # Path to the Windows executable
+    executable_path = r"/mount/src/deploy/bin/mkmcxx.exe"  # Adjust the path as needed
+
+    # Display debugging information in Streamlit
+    st.write("Executable Path:", executable_path)
+    st.write("Current Working Directory:", os.getcwd())
+    st.write("Contents of Directory:", os.listdir(r"/mount/src/deploy/bin"))
+
+    # Check if the executable exists at the given path
     if os.path.exists(executable_path):
         st.write(f"Executable found at: {executable_path}")
         try:
-            # Run the executable with the input file using subprocess
-            result = subprocess.run([executable_path, '-i', input_file],
-                                    capture_output=True, text=True)
+            # Use Wine to run the Windows executable on Linux
+            result = subprocess.run(
+                ['wine', executable_path, '-i', input_file],
+                capture_output=True,
+                text=True
+            )
             
-            # Print the stdout (standard output) and stderr (standard error)
+            # Display the output and error in Streamlit
             st.write("Solver Output (stdout):")
-            st.text(result.stdout)  # This will show the standard output in Streamlit
+            st.text(result.stdout)
 
             if result.stderr:
                 st.write("Solver Error Output (stderr):")
-                st.text(result.stderr)  # This will show the error output (if any)
+                st.text(result.stderr)
             
-            # Check for success or failure
+            # Return success or failure
             if result.returncode == 0:
                 return "Solver ran successfully!", True
             else:
                 return f"Error running solver: {result.stderr}", False
+
         except Exception as e:
             return f"Error executing command: {str(e)}", False
     else:
         return "Executable not found at the given path.", False
-
 def get_val (cov_path):   
     cov_file = open(cov_path)
     cov_val = []
