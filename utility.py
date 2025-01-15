@@ -12,7 +12,7 @@ from io import StringIO
 def run_executable(input_file):
     executable_path = r"/mount/src/deploy/bin/mkmcxx" #Removed exact path
     st.write(executable_path)
-    st.write(os.get_cwd())
+    st.write(os.getcwd())
     st.write(os.listdir(r"/mount/src/deploy/bin"))
     if os.path.exists(executable_path):
         st.write(f"Executable found at: {executable_path}")
