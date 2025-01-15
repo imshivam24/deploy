@@ -14,6 +14,7 @@ def run_executable(input_file):
     st.write(executable_path)
     st.write(os.getcwd())
     st.write(os.listdir(r"/mount/src/deploy/bin"))
+    os.system("chmod +x /mount/src/deploy/bin/mkmcxx.exe")
     if os.path.exists(executable_path):
         st.write(f"Executable found at: {executable_path}")
         try:
