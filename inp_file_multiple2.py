@@ -6,25 +6,44 @@ from openpyxl import load_workbook
 from sympy import sympify, symbols
 from mkm_parameters import *
 
-def evaluate_formula(formula, context):
+def evaluate_excel_formula(formula, context, sheet_data):
     """
-    Evaluates a formula string using a context dictionary for variable substitution.
+    Evaluates an Excel-style formula by replacing references with actual values.
     
     Args:
     formula (str): The formula to evaluate.
-    context (dict): A dictionary with variable names as keys and their values.
+    context (dict): A dictionary for variable substitution.
+    sheet_data (dict): Dictionary of sheet names to DataFrame mappings.
     
     Returns:
     float: The evaluated result.
     """
     try:
-        # Replace variables in formula with their values
+        # Replace Excel-style sheet references with actual values
+        import re
+
+        def replace_reference(match):
+            ref = match.group(1)  # Extract reference inside quotes
+            sheet, cell = ref.split('!')
+            sheet = sheet.strip("'")  # Remove surrounding quotes
+            row, col = cell[1:], cell[:1]  # Extract row and column
+            row = int(row) - 1  # Convert to 0-based index
+            col_index = ord(col.upper()) - ord('A')  # Convert column to index
+            return str(sheet_data[sheet].iloc[row, col_index])  # Lookup value
+
+        # Find all references like 'SheetName'!Cell
+        pattern = r"'([^']+)'!([A-Z]+\d+)"
+        formula = re.sub(pattern, replace_reference, formula)
+
+        # Evaluate the modified formula using sympy
         expr = sympify(formula)
         result = expr.evalf(subs=context)
         return result
+
     except Exception as e:
         st.error(f"Error evaluating formula '{formula}': {e}")
         return np.nan
+
 
 def read_and_compute(file_name, sheet_name, column_name, dependencies):
     """
@@ -59,7 +78,7 @@ def read_and_compute(file_name, sheet_name, column_name, dependencies):
         for formula in df[column_name]:
             if isinstance(formula, str) and '=' in formula:  # Formula detected
                 # Compute formula using dependencies
-                computed_values.append(evaluate_formula(formula.strip('='), dependencies))
+                computed_values.append(evaluate_excel_formula(formula.strip('='), dependencies))
             else:  # Not a formula
                 computed_values.append(formula)
 
