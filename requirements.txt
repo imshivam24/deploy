@@ -3,5 +3,4 @@ pandas
 numpy
 xlwings
 openpyxl
-pythoncom
 matplotlib  
