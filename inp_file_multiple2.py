@@ -1,104 +1,101 @@
 import os
-import subprocess
 import streamlit as st
 import pandas as pd
 import numpy as np
 from openpyxl import load_workbook
+from sympy import sympify, symbols
 from mkm_parameters import *
 
-def recalculate_excel(file_path):
+def evaluate_formula(formula, context):
     """
-    Recalculates formulas in an Excel file using LibreOffice CLI and returns the path to the recalculated file.
+    Evaluates a formula string using a context dictionary for variable substitution.
     
     Args:
-    file_path (str): Path to the original Excel file.
+    formula (str): The formula to evaluate.
+    context (dict): A dictionary with variable names as keys and their values.
     
     Returns:
-    str: Path to the recalculated Excel file.
+    float: The evaluated result.
     """
     try:
-        # Define output file path
-        recalculated_file_path = file_path.replace(".xlsx", "_recalculated.xlsx")
-        
-        # Use LibreOffice CLI to recalculate formulas
-        subprocess.run(
-            [
-                "libreoffice", "--headless", "--convert-to", "xlsx",
-                file_path, "--outdir", os.path.dirname(file_path)
-            ],
-            check=True
-        )
-        return recalculated_file_path
+        # Replace variables in formula with their values
+        expr = sympify(formula)
+        result = expr.evalf(subs=context)
+        return result
     except Exception as e:
-        st.error(f"Error recalculating Excel formulas: {str(e)}")
-        raise e
+        st.error(f"Error evaluating formula '{formula}': {e}")
+        return np.nan
 
-def read_formulas(file_name, sheet_name, column_name):
+def read_and_compute(file_name, sheet_name, column_name, dependencies):
     """
-    Reads the formulas in an Excel file, saves the file, and returns the DataFrame with the calculated values.
-    
+    Reads formulas from an Excel sheet, computes their values, and returns a DataFrame.
+
     Args:
     file_name (str): Path to the Excel file.
     sheet_name (str): Name of the sheet to process.
-    column_name (str): The column name to focus on in the resulting DataFrame.
-    
+    column_name (str): Column containing formulas.
+    dependencies (dict): Mapping of column names to their computed values.
+
     Returns:
-    pd.DataFrame: DataFrame with the computed values from the specified column.
+    pd.Series: Series with computed values for the specified column.
     """
     try:
-        # Load workbook with recalculated formulas
-        workbook = load_workbook(file_name, data_only=True)
+        # Load the workbook and sheet
+        workbook = load_workbook(file_name)
         sheet = workbook[sheet_name]
 
-        # Read sheet data into a list
+        # Extract column names and values
         data = []
         for row in sheet.iter_rows(values_only=True):
             data.append(row)
 
-        # Convert list to DataFrame
         df = pd.DataFrame(data[1:], columns=data[0])  # First row as headers
 
-        # Filter the DataFrame for the specified column
+        # Compute values for the formula column
         if column_name not in df.columns:
             raise ValueError(f"Column '{column_name}' not found in the sheet.")
-        
-        return df[[column_name]]  # Return only the requested column
+
+        computed_values = []
+        for formula in df[column_name]:
+            if isinstance(formula, str) and '=' in formula:  # Formula detected
+                # Compute formula using dependencies
+                computed_values.append(evaluate_formula(formula.strip('='), dependencies))
+            else:  # Not a formula
+                computed_values.append(formula)
+
+        return pd.Series(computed_values, name=column_name)
     
     except Exception as e:
-        st.write(f"Error: {e}")
-        print(f"Error: {e}")
-        return None
+        st.error(f"Error reading and computing formulas: {e}")
+        return pd.Series(dtype=float)
 
 def inp_file_gen_multiple(uploaded_file, children_folder):
     """
-    Generates an input file based on Excel file data.
+    Generates an input file based on Excel file data, evaluating formulas manually.
     """
     if uploaded_file:
         try:
-            # Recalculate formulas in the uploaded file
-            recalculated_file = recalculate_excel(uploaded_file)
+            # Read required data
+            data2 = pd.read_excel(uploaded_file, sheet_name="Local Environment")
+            data3 = pd.read_excel(uploaded_file, sheet_name="Input-Output Species")
 
-            # Read necessary sheets from the recalculated Excel file
-            data1 = pd.read_excel(recalculated_file, sheet_name="Reactions")
-            data2 = pd.read_excel(recalculated_file, sheet_name="Local Environment")
-            data3 = pd.read_excel(recalculated_file, sheet_name="Input-Output Species")
-        except Exception as e:
-            st.error(f"Error reading sheets: {str(e)}")
-            return
-        
-        try:
-            # Extract required parameters
-            pH_list = data2["pH"].tolist()
-            V_list = data2["V"][0]
+            # Define dependencies for formula computation
+            dependencies = {
+                'pH': data2['pH'][0],
+                'V': data2['V'][0],
+                'Pressure': data2['Pressure'][0],
+            }
+
+            # Compute formula columns
+            concentrations = read_and_compute(uploaded_file, 'Input-Output Species', 'Input MKMCXX', dependencies)
+            Ea = read_and_compute(uploaded_file, 'Reactions', 'G_f', dependencies)
+            Eb = read_and_compute(uploaded_file, 'Reactions', 'G_b', dependencies)
             gases = data3["Species"].tolist()
-            concentrations = read_formulas(recalculated_file, 'Input-Output Species', 'Input MKMCXX')['Input MKMCXX']
-            rxn = data1["Reactions"]
-            Ea = read_formulas(recalculated_file, 'Reactions', 'G_f')['G_f']
-            Eb = read_formulas(recalculated_file, 'Reactions', 'G_b')['G_b']
-            P = data2["Pressure"][0]
-            st.write("Parameters extracted successfully!")
+            rxn = pd.read_excel(uploaded_file, sheet_name="Reactions")["Reactions"]
+
+            st.write("Parameters extracted and formulas computed successfully!")
         except Exception as e:
-            st.error(f"Error extracting parameters: {str(e)}")
+            st.error(f"Error extracting parameters or computing formulas: {str(e)}")
             return
 
         try:
@@ -107,25 +104,23 @@ def inp_file_gen_multiple(uploaded_file, children_folder):
             Product1, Product2, Product3 = [], [], []
             adsorbates = []
 
-            for i in range(len(rxn)):
-                # Extract Reactants and Products
-                reactants = rxn[i].split("→")[0].split("+")
-                products = rxn[i].split("→")[1].split("+")
-                
-                Reactant1.append(f"{{{reactants[0].strip()}}}")
-                Reactant2.append(f"{{{reactants[1].strip()}}}" if len(reactants) > 1 else "")
-                Reactant3.append(f"{{{reactants[2].strip()}}}" if len(reactants) > 2 else "")
+            for reaction in rxn:
+                reactants, products = reaction.split("→")
+                reactants = [r.strip() for r in reactants.split("+")]
+                products = [p.strip() for p in products.split("+")]
 
-                Product1.append(f"{{{products[0].strip()}}}")
-                Product2.append(f"{{{products[1].strip()}}}" if len(products) > 1 else "")
-                Product3.append(f"{{{products[2].strip()}}}" if len(products) > 2 else "")
+                Reactant1.append(f"{{{reactants[0]}}}")
+                Reactant2.append(f"{{{reactants[1]}}}" if len(reactants) > 1 else "")
+                Reactant3.append(f"{{{reactants[2]}}}" if len(reactants) > 2 else "")
 
-                # Collect adsorbates
-                for r in (Reactant1[-1], Reactant2[-1], Product1[-1], Product2[-1]):
-                    if "*" in r and r.strip("{").strip("}") not in adsorbates:
-                        adsorbates.append(r.strip("{").strip("}"))
-            
-            # Remove "*" from adsorbates
+                Product1.append(f"{{{products[0]}}}")
+                Product2.append(f"{{{products[1]}}}" if len(products) > 1 else "")
+                Product3.append(f"{{{products[2]}}}" if len(products) > 2 else "")
+
+                for item in reactants + products:
+                    if "*" in item and item not in adsorbates:
+                        adsorbates.append(item)
+
             adsorbates = [a for a in adsorbates if a != "*"]
             activity = np.zeros(len(adsorbates))
         except Exception as e:
@@ -153,9 +148,9 @@ def inp_file_gen_multiple(uploaded_file, children_folder):
                     line = f"AR; {Reactant1[j]} + {Reactant2[j]} => {Product1[j]} + {Product2[j]}; {pre_exp:.2e}; {pre_exp:.2e}; {Ea[j]}; {Eb[j]}\n"
                     inp_file.write(line)
 
-                inp_file.write("\n\n&settings\nTYPE = SEQUENCERUN\nPRESSURE = {}\nPOTAXIS=1\nDEBUG=0\n".format(P))
+                inp_file.write("\n\n&settings\nTYPE = SEQUENCERUN\nPRESSURE = {}\nPOTAXIS=1\nDEBUG=0\n".format(dependencies['Pressure']))
                 inp_file.write("NETWORK_RATES=1\nNETWORK_FLUX=1\nUSETIMESTAMP=0\n\n&runs\n# Temp; Potential;Time;AbsTol;RelTol\n")
-                inp_file.write("{:<5};{:<5};{:<5.2e};{:<5};{:<5}\n".format(Temp, V_list, Time, Abstol, Reltol))
+                inp_file.write("{:<5};{:<5};{:<5.2e};{:<5};{:<5}\n".format(Temp, dependencies['V'], Time, Abstol, Reltol))
             st.write(f"Input file successfully created at {inp_file_path}")
         except Exception as e:
             st.error(f"Error writing input file: {str(e)}")
