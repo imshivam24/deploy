@@ -4,5 +4,3 @@ numpy
 xlwings
 openpyxl
 matplotlib  
-#pywin32
-#pypiwin32
